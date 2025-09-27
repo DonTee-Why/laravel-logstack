@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
  * - Circuit breaker pattern
  * - Batch log ingestion
  */
-final class LogStackClient implements LogStackClientInterface
+class LogStackClient implements LogStackClientInterface
 {
     private Client $httpClient;
     private string $baseUrl;
@@ -32,7 +32,6 @@ final class LogStackClient implements LogStackClientInterface
         $this->baseUrl = rtrim(string: $baseUrl, characters: '/');
         $this->token = $token;
 
-        // Merge default options with provided options
         $defaultOptions = [
             'timeout' => 30,
             'connect_timeout' => 10,
@@ -44,7 +43,6 @@ final class LogStackClient implements LogStackClientInterface
         ];
 
         $options = array_merge_recursive($defaultOptions, $httpOptions);
-        // TODO: Configure Guzzle client with retry middleware, timeouts, etc.
         $this->httpClient = new Client($options);
     }
 
@@ -56,13 +54,10 @@ final class LogStackClient implements LogStackClientInterface
      */
     public function ingest(array $entries): array
     {
-        // TODO: Implement ingestion logic
-        // 1. Prepare request payload
         try {
             $payload = [
                 'entries' => $entries,
             ];
-            // 2. Send POST to /v1/logs:ingest
             $response = $this->httpClient->request(
                 method: 'POST',
                 uri: "{$this->baseUrl}/v1/logs:ingest",
@@ -71,13 +66,10 @@ final class LogStackClient implements LogStackClientInterface
                 ]
             );
 
-            // 3. Handle response
             $responseData = json_decode($response->getBody()->getContents(), true);
 
-            // 4. Return response data
             return $responseData ?? [];
         } catch (GuzzleException $e) {
-            // Log error but re-throw for caller to handle
             Log::error('LogStackClient ingest failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

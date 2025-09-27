@@ -18,11 +18,11 @@ use Illuminate\Support\Facades\Log;
  * Processes log records and sends them to LogStack service via HTTP.
  * Supports both sync and async (queue-based) processing.
  */
-final class LogStackHandler extends AbstractProcessingHandler
+class LogStackHandler extends AbstractProcessingHandler
 {
     private bool $async;
     private LogStackClient $client;
-    private LogStackFormatter $formatter;
+    private LogStackFormatter $logStackFormatter;
     private array $buffer = [];
     private int $batchSize = 50;
     private int $batchTimeoutMs = 5000;
@@ -40,7 +40,7 @@ final class LogStackHandler extends AbstractProcessingHandler
     ) {
         parent::__construct($level, $bubble);
         $this->client = $client;
-        $this->formatter = $formatter;
+        $this->logStackFormatter = $formatter;
         $this->async = $async;
         $this->batchSize = $batchSize;
         $this->batchTimeoutMs = $batchTimeoutMs;
@@ -54,9 +54,7 @@ final class LogStackHandler extends AbstractProcessingHandler
      */
     protected function write(LogRecord $record): void
     {
-        // TODO: Implement handler logic
-        // 1. Transform LogRecord to LogStack format
-        $formattedRecord = $this->formatter->format($record);
+        $formattedRecord = $this->logStackFormatter->format($record);
         $this->buffer[] = json_decode(json: $formattedRecord, associative: true);
         if (count($this->buffer) >= $this->batchSize) {
             $this->flush();

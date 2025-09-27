@@ -21,7 +21,7 @@ final class LogStackDriver
      */
     public function __invoke(array $config): Logger
     {
-        $logStackConfig = new LogStackConfig(config: $config);
+        $logStackConfig = new LogStackConfig(config: $config, laravelConfig: config('logstack', []));
         $client = new LogStackClient(
             baseUrl: $logStackConfig->getUrl(),
             token: $logStackConfig->getToken(),
@@ -40,7 +40,7 @@ final class LogStackDriver
             queueConnection: $logStackConfig->getQueueConnection(),
         );
         $logger = new Logger(name: 'logstack');
-        $logger->pushHandler($handler);
+        $logger->pushHandler(handler: $handler);
 
         return $logger;
     }

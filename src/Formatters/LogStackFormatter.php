@@ -13,7 +13,7 @@ use Monolog\LogRecord;
  * Transforms Monolog LogRecord objects into LogStack-compatible format.
  * Handles field mapping, data sanitization, and JSON serialization.
  */
-final class LogStackFormatter implements FormatterInterface
+class LogStackFormatter implements FormatterInterface
 {
     private string $serviceName;
     private string $environment;
@@ -34,20 +34,17 @@ final class LogStackFormatter implements FormatterInterface
      */
     public function format(LogRecord $record): string
     {
-        // TODO: Implement formatting logic
-        // 1. Map Monolog fields to LogStack format
         $logEntry = [
-            //2024-01-15T10:30:00.000Z
             'timestamp' => $record->datetime->format(format: 'Y-m-d\TH:i:s.v\Z'),
-            'level' => $this->mapLevel(monologLevel: $record->level->getName()),
+            'level' => $this->mapLevel(monologLevel: $record->level->name),
             'message' => $this->limitString(value: $record->message, maxLength: 8192),
             'service' => $this->serviceName,
             'env' => $this->environment,
         ];
-        // 2. Extract labels and metadata
-        $logEntry['labels'] = $this->extractLabels(context: $record->context);
+        $context = $record->context;
+        $logEntry['labels'] = $this->extractLabels(context: $context);
         $logEntry['metadata'] = $this->ensureJsonSafe(
-            array_merge($record->context, $record->extra)
+            array_merge($context, $record->extra)
         );
         return json_encode(value: $logEntry, flags: JSON_THROW_ON_ERROR);
     }
@@ -71,14 +68,14 @@ final class LogStackFormatter implements FormatterInterface
     private function mapLevel(string $monologLevel): string
     {
         return match ($monologLevel) {
-            'DEBUG' => 'DEBUG',
-            'INFO' => 'INFO',
-            'NOTICE' => 'INFO',
-            'WARNING' => 'WARN',
-            'ERROR' => 'ERROR',
-            'CRITICAL' => 'ERROR',
-            'ALERT' => 'FATAL',
-            'EMERGENCY' => 'FATAL',
+            'Debug' => 'DEBUG',
+            'Info' => 'INFO',
+            'Notice' => 'INFO',
+            'Warning' => 'WARN',
+            'Error' => 'ERROR',
+            'Critical' => 'ERROR',
+            'Alert' => 'FATAL',
+            'Emergency' => 'FATAL',
             default => 'INFO'
         };
     }
