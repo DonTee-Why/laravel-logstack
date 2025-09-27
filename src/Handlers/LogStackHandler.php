@@ -27,6 +27,7 @@ class LogStackHandler extends AbstractProcessingHandler
     private int $batchSize = 50;
     private int $batchTimeoutMs = 5000;
     private string $queueConnection;
+    private float $lastFlushTime;
 
     public function __construct(
         LogStackClient $client,
@@ -45,6 +46,7 @@ class LogStackHandler extends AbstractProcessingHandler
         $this->batchSize = $batchSize;
         $this->batchTimeoutMs = $batchTimeoutMs;
         $this->queueConnection = $queueConnection;
+        $this->lastFlushTime = microtime(true);
     }
 
     /**
@@ -54,8 +56,14 @@ class LogStackHandler extends AbstractProcessingHandler
      */
     protected function write(LogRecord $record): void
     {
+        if ($this->isTimeoutExceeded()) {
+            $this->flush();
+        }
+        
         $formattedRecord = $this->logStackFormatter->format($record);
         $this->buffer[] = json_decode(json: $formattedRecord, associative: true);
+        
+        // Flush if batch size reached
         if (count($this->buffer) >= $this->batchSize) {
             $this->flush();
         }
@@ -77,23 +85,40 @@ class LogStackHandler extends AbstractProcessingHandler
             }
 
             $this->buffer = [];
+            $this->lastFlushTime = microtime(true); // Reset timer after successful flush
         } catch (\Throwable $th) {
-            Log::error('LogStackHandler flush failed', [
-                'error' => $th->getMessage(),
-                'trace' => $th->getTraceAsString(),
-            ]);
+            // Log::error('LogStackHandler flush failed', [
+            //     'error' => $th->getMessage(),
+            //     'trace' => $th->getTraceAsString(),
+            // ]);
 
             if ($this->async) {
                 try {
                     $this->client->ingest($this->buffer);
                 } catch (\Throwable $fallbackError) {
-                    Log::error('LogStackHandler flush fallback failed', [
-                        'error' => $fallbackError->getMessage(),
-                        'trace' => $fallbackError->getTraceAsString(),
-                    ]);
+                    // Log::error('LogStackHandler flush fallback failed', [
+                    //     'error' => $fallbackError->getMessage(),
+                    //     'trace' => $fallbackError->getTraceAsString(),
+                    // ]);
                 }
             }
         }
+    }
+
+    /**
+     * Check if the batch timeout has been exceeded.
+     */
+    private function isTimeoutExceeded(): bool
+    {
+        if (empty($this->buffer)) {
+            return false;
+        }
+        
+        $currentTime = microtime(true);
+        $elapsedMs = ($currentTime - $this->lastFlushTime) * 1000;
+        
+        
+        return $elapsedMs >= $this->batchTimeoutMs;
     }
 
     public function __destruct()
