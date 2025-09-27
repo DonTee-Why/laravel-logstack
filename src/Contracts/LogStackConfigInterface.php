@@ -63,6 +63,11 @@ interface LogStackConfigInterface
     public function getRetryConfig(): array;
 
     /**
+     * Get queue connection.
+     */
+    public function getQueueConnection(): string;
+
+    /**
      * Validate that all required configuration is present.
      * 
      * @throws \InvalidArgumentException When required config is missing

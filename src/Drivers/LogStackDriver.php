@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace DonTeeWhy\LogStack\Drivers;
 
+use DonTeeWhy\LogStack\Config\LogStackConfig;
+use DonTeeWhy\LogStack\Formatters\LogStackFormatter;
+use DonTeeWhy\LogStack\Handlers\LogStackHandler;
+use DonTeeWhy\LogStack\Http\LogStackClient;
 use Monolog\Logger;
 
 /**
@@ -17,11 +21,27 @@ final class LogStackDriver
      */
     public function __invoke(array $config): Logger
     {
-        // TODO: Implement driver logic
-        // 1. Create LogStack handler with config
-        // 2. Create Monolog logger with handler
-        // 3. Return configured logger
-        
-        throw new \RuntimeException('LogStackDriver not implemented yet');
+        $logStackConfig = new LogStackConfig(config: $config);
+        $client = new LogStackClient(
+            baseUrl: $logStackConfig->getUrl(),
+            token: $logStackConfig->getToken(),
+        );
+        $formatter = new LogStackFormatter(
+            serviceName: $logStackConfig->getServiceName(),
+            environment: $logStackConfig->getEnvironment(),
+            defaultLabels: $logStackConfig->getDefaultLabels(),
+        );
+        $handler = new LogStackHandler(
+            client: $client,
+            formatter: $formatter,
+            async: $logStackConfig->isAsync(),
+            batchSize: $logStackConfig->getBatchSize(),
+            batchTimeoutMs: $logStackConfig->getTimeout(),
+            queueConnection: $logStackConfig->getQueueConnection(),
+        );
+        $logger = new Logger(name: 'logstack');
+        $logger->pushHandler($handler);
+
+        return $logger;
     }
 }

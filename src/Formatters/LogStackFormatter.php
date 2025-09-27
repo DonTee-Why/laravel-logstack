@@ -1,9 +1,9 @@
 <?php
+
 declare(strict_types=1);
 
 namespace DonTeeWhy\LogStack\Formatters;
 
-use Illuminate\Support\Carbon;
 use Monolog\Formatter\FormatterInterface;
 use Monolog\LogRecord;
 
@@ -36,19 +36,20 @@ final class LogStackFormatter implements FormatterInterface
     {
         // TODO: Implement formatting logic
         // 1. Map Monolog fields to LogStack format
-        $logStackRecord = [
+        $logEntry = [
             //2024-01-15T10:30:00.000Z
-            'timestamp' => Carbon::parse($record->datetime)->format('Y-m-d\TH:i:s.uP'),
-            'level' => $record->level,
-            'message' => $record->message,
+            'timestamp' => $record->datetime->format(format: 'Y-m-d\TH:i:s.v\Z'),
+            'level' => $this->mapLevel(monologLevel: $record->level->getName()),
+            'message' => $this->limitString(value: $record->message, maxLength: 8192),
             'service' => $this->serviceName,
             'env' => $this->environment,
         ];
         // 2. Extract labels and metadata
-        // 3. Apply data sanitization
-        // 4. Return JSON string
-        
-        return json_encode($logStackRecord, JSON_THROW_ON_ERROR);
+        $logEntry['labels'] = $this->extractLabels(context: $record->context);
+        $logEntry['metadata'] = $this->ensureJsonSafe(
+            array_merge($record->context, $record->extra)
+        );
+        return json_encode(value: $logEntry, flags: JSON_THROW_ON_ERROR);
     }
 
     /**
@@ -56,11 +57,63 @@ final class LogStackFormatter implements FormatterInterface
      */
     public function formatBatch(array $records): string
     {
-        // TODO: Implement batch formatting
-        // 1. Format each record
-        // 2. Wrap in LogStack batch format
-        // 3. Return JSON string
-        
-        throw new \RuntimeException('LogStackFormatter formatBatch not implemented yet');
+        $formattedEntries = [];
+
+        foreach ($records as $record) {
+            $formattedEntries[] = json_decode(json: $this->format(record: $record), associative: true);
+        }
+
+        return json_encode(value: [
+            'entries' => $formattedEntries
+        ], flags: JSON_THROW_ON_ERROR);
+    }
+
+    private function mapLevel(string $monologLevel): string
+    {
+        return match ($monologLevel) {
+            'DEBUG' => 'DEBUG',
+            'INFO' => 'INFO',
+            'NOTICE' => 'INFO',
+            'WARNING' => 'WARN',
+            'ERROR' => 'ERROR',
+            'CRITICAL' => 'ERROR',
+            'ALERT' => 'FATAL',
+            'EMERGENCY' => 'FATAL',
+            default => 'INFO'
+        };
+    }
+
+    private function extractLabels(array &$context): array
+    {
+        $labels = $this->defaultLabels;
+        $labelKeys = ['region', 'tenant', 'schema_version'];
+
+        foreach ($labelKeys as $key) {
+            if (isset($context[$key])) {
+                $labels[$key] = substr(string: (string) $context[$key], offset: 0, length: 64);
+                unset($context[$key]);
+            }
+        }
+
+        return array_slice(array: $labels, offset: 0, length: 6, preserve_keys: true);
+    }
+
+    private function limitString(string $value, int $maxLength): string
+    {
+        return strlen(string: $value) > $maxLength
+            ? substr(string: $value, offset: 0, length: $maxLength - 3) . '...'
+            : $value;
+    }
+
+    private function ensureJsonSafe(array $data): array
+    {
+        foreach ($data as $key => &$value) {
+            if (is_resource(value: $value)) {
+                $value = '[RESOURCE]';
+            } elseif (is_object(value: $value)) {
+                $value = method_exists(object_or_class: $value, method: '__toString') ? (string) $value : '[OBJECT]';
+            }
+        }
+        return $data;
     }
 }

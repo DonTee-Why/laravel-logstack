@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace DonTeeWhy\LogStack\Config;
@@ -23,7 +24,7 @@ final class LogStackConfig implements LogStackConfigInterface
             $laravelConfig,
             $config
         );
-        
+
         $this->validate();
     }
 
@@ -100,6 +101,11 @@ final class LogStackConfig implements LogStackConfigInterface
             'attempts' => $this->config['retry_attempts'] ?? 3,
             'delay_ms' => $this->config['retry_delay_ms'] ?? [5000, 10000, 20000],
         ];
+    }
+
+    public function getQueueConnection(): string
+    {
+        return $this->config['queue'] ?? Config::get('queue.default');
     }
 
     /**
