@@ -32,6 +32,8 @@ Publish the configuration file:
 
 ```bash
 php artisan vendor:publish --tag=logstack-config
+# OR
+php artisan vendor:publish --provider="DonTeeWhy\LogStack\Providers\LogStackServiceProvider" --tag="logstack-config"
 ```
 
 ## Configuration
