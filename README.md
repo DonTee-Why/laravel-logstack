@@ -1,7 +1,7 @@
 # Laravel LogStack
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/dontee-why/laravel-logstack.svg?style=flat-square)](https://packagist.org/packages/dontee-why/laravel-logstack)
-[![Total Downloads](https://img.shields.io/packagist/dt/dontee-why/laravel-logstack.svg?style=flat-square)](https://packagist.org/packages/dontee-why/laravel-logstack)
+<!-- [![Latest Version on Packagist](https://img.shields.io/packagist/v/dontee-why/laravel-logstack.svg?style=flat-square)](https://packagist.org/packages/dontee-why/laravel-logstack)
+[![Total Downloads](https://img.shields.io/packagist/dt/dontee-why/laravel-logstack.svg?style=flat-square)](https://packagist.org/packages/dontee-why/laravel-logstack) -->
 
 A Laravel package that provides seamless integration with LogStack log ingestion service. Enables centralized logging across multiple Laravel applications with native Laravel logging interface compatibility.
 
