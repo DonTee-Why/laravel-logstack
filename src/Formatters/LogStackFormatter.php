@@ -82,11 +82,12 @@ class LogStackFormatter implements FormatterInterface
 
     private function extractLabels(array &$context): array
     {
-        $labels = $this->defaultLabels;
+        // Filter out null values from default labels
+        $labels = array_filter($this->defaultLabels, fn($value) => $value !== null && $value !== '');
         $labelKeys = ['region', 'tenant', 'schema_version'];
 
         foreach ($labelKeys as $key) {
-            if (isset($context[$key])) {
+            if (isset($context[$key]) && $context[$key] !== null) {
                 $labels[$key] = substr(string: (string) $context[$key], offset: 0, length: 64);
                 unset($context[$key]);
             }
