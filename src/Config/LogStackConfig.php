@@ -127,7 +127,7 @@ class LogStackConfig implements LogStackConfigInterface
         if (!str_starts_with($this->config['url'], 'http://') && !str_starts_with($this->config['url'], 'https://')) {
             throw new \InvalidArgumentException('LogStack URL must use http:// or https://');
         }
-        if (!filter_var($this->config['token'], FILTER_VALIDATE_REGEXP, ['options' => ['regexp' => '/^[a-zA-Z0-9]+$/']])) {
+        if (!filter_var($this->config['token'], FILTER_VALIDATE_REGEXP, ['options' => ['regexp' => '/^[a-zA-Z0-9_]+$/']])) {
             throw new \InvalidArgumentException('LogStack token is not a valid token');
         }
     }
