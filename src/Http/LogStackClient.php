@@ -70,20 +70,12 @@ class LogStackClient implements LogStackClientInterface
 
             return $responseData ?? [];
         } catch (GuzzleException $e) {
-            Log::error('LogStackClient ingest failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
             throw new \RuntimeException(
                 'LogStack ingestion failed (GuzzleException): ' . $e->getMessage(),
                 $e->getCode(),
                 $e
             );
         } catch (\Exception $e) {
-            Log::error('LogStackClient ingest failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
             throw new \RuntimeException(
                 'LogStack ingestion failed (Exception): ' . $e->getMessage(),
                 $e->getCode(),
@@ -108,16 +100,8 @@ class LogStackClient implements LogStackClientInterface
 
             return $response->getStatusCode() >= 200 && $response->getStatusCode() < 300;
         } catch (GuzzleException $e) {
-            Log::error('LogStackClient ping failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
             return false;
         } catch (\Exception $e) {
-            Log::error('LogStackClient ping failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
             return false;
         }
     }
