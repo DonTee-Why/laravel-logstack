@@ -35,7 +35,7 @@ class LogStackFormatter implements FormatterInterface
     public function format(LogRecord $record): string
     {
         $logEntry = [
-            'timestamp' => $record->datetime->format(format: 'Y-m-d\TH:i:s.v\Z'),
+            'timestamp' => (clone $record->datetime)->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.v\Z'),
             'level' => $this->mapLevel(monologLevel: $record->level->name),
             'message' => $this->limitString(value: $record->message, maxLength: 8192),
             'service' => $this->serviceName,
