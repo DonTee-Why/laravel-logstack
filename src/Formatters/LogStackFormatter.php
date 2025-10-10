@@ -80,7 +80,7 @@ class LogStackFormatter implements FormatterInterface
         };
     }
 
-    private function extractLabels(array &$context): array
+    private function extractLabels(array &$context): array|object
     {
         // Filter out null values from default labels
         $labels = array_filter($this->defaultLabels, fn($value) => $value !== null && $value !== '');
@@ -93,7 +93,11 @@ class LogStackFormatter implements FormatterInterface
             }
         }
 
-        return array_slice(array: $labels, offset: 0, length: 6, preserve_keys: true);
+        $result = array_slice(array: $labels, offset: 0, length: 6, preserve_keys: true);
+        
+        // Ensure we return an object (not array) when JSON encoded
+        // PHP empty arrays become JSON arrays [], but we need JSON objects {}
+        return empty($result) ? (object)[] : $result;
     }
 
     private function limitString(string $value, int $maxLength): string

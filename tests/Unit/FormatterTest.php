@@ -303,4 +303,37 @@ class FormatterTest extends TestCase
         $decoded = json_decode($result, true);
         $this->assertIsArray($decoded);
     }
+
+    public function test_empty_labels_returns_json_object_not_array(): void
+    {
+        // Create formatter with no default labels to ensure empty labels scenario
+        $formatter = new LogStackFormatter(
+            serviceName: 'test-service',
+            environment: 'testing',
+            defaultLabels: []
+        );
+
+        $record = new LogRecord(
+            datetime: new \DateTimeImmutable('2024-01-15 10:30:00'),
+            channel: 'test',
+            level: Level::Info,
+            message: 'Test message',
+            context: [], // No labels in context
+            extra: []
+        );
+
+        $result = $formatter->format($record);
+        $decoded = json_decode($result, true);
+
+        $this->assertIsArray($decoded);
+        $this->assertArrayHasKey('labels', $decoded);
+        
+        // The key test: empty labels should be {} (object) not [] (array)
+        // In PHP, this means it should be an empty associative array that JSON encodes as {}
+        $this->assertEquals([], $decoded['labels']);
+        
+        // Verify the raw JSON contains {} not []
+        $this->assertStringContainsString('"labels":{}', $result);
+        $this->assertStringNotContainsString('"labels":[]', $result);
+    }
 }
