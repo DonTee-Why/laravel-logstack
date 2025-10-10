@@ -42,11 +42,21 @@ class LogStackFormatter implements FormatterInterface
             'env' => $this->environment,
         ];
         $context = $record->context;
-        $logEntry['labels'] = $this->extractLabels(context: $context);
+        $labels = $this->extractLabels(context: $context);
+        $logEntry['labels'] = $labels;
         $logEntry['metadata'] = $this->ensureJsonSafe(
             array_merge($context, $record->extra)
         );
-        return json_encode(value: $logEntry, flags: JSON_THROW_ON_ERROR);
+        
+        // Handle empty labels specially to ensure they become {} not []
+        $json = json_encode(value: $logEntry, flags: JSON_THROW_ON_ERROR);
+        
+        // If labels is an empty object but got encoded as [], fix it
+        if (is_object($labels) && empty((array)$labels)) {
+            $json = str_replace('"labels":[]', '"labels":{}', $json);
+        }
+        
+        return $json;
     }
 
     /**
@@ -57,12 +67,14 @@ class LogStackFormatter implements FormatterInterface
         $formattedEntries = [];
 
         foreach ($records as $record) {
-            $formattedEntries[] = json_decode(json: $this->format(record: $record), associative: true);
+            // Use the already formatted JSON string directly instead of decoding/re-encoding
+            $formattedJson = $this->format(record: $record);
+            $formattedEntries[] = $formattedJson;
         }
 
-        return json_encode(value: [
-            'entries' => $formattedEntries
-        ], flags: JSON_THROW_ON_ERROR);
+        // Manually construct the batch JSON to preserve object formatting
+        $entriesJson = implode(',', $formattedEntries);
+        return '{"entries":[' . $entriesJson . ']}';
     }
 
     private function mapLevel(string $monologLevel): string
